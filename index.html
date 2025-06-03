@@ -74,12 +74,12 @@
 
       const runwayData = await runwayRes.json();
 
-      if (!runwayData.id) {
-  const errorMessage = runwayData.error?.message || "حدث خطأ غير معروف.";
-  status.textContent = `❌ فشل إنشاء المهمة في Runway: ${errorMessage}`;
-  console.error("تفاصيل الخطأ من Runway:", runwayData);
+if (!runwayData.id) {
+  console.error("📛 رد Runway:", runwayData);
+  status.textContent = `❌ فشل إنشاء المهمة في Runway: ${runwayData.error?.message || "حدث خطأ غير معروف."}`;
   return;
 }
+
 
       const taskId = runwayData.id;
       status.textContent = "⏳ جاري توليد الفيديو...";
