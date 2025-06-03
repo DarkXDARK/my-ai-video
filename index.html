@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>مولد فيديو بالذكاء الاصطناعي</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900 p-4 font-sans">
+  <div class="max-w-xl mx-auto bg-white shadow-xl rounded-xl p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-center mb-4">🎥 مولد فيديو من الصور</h1>
+
+    <input type="file" id="imageInput" multiple accept="image/*"
+           class="w-full p-2 border rounded-md"/>
+
+    <div id="preview" class="grid grid-cols-3 gap-2 mt-2"></div>
+
+    <button onclick="uploadImages()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+      ⚙️ إنشاء الفيديو
+    </button>
+
+    <div id="status" class="text-center text-sm mt-2"></div>
+
+    <div id="videoResult" class="mt-4 text-center"></div>
+  </div>
+
+  <script>
+    const API_KEY = "key_6ed2397f66edbb1bba927b06e94139079c33d19e81b4e0bc755e913455b83a384815eb1ff4f66245902366e530a0f99db833a76119f216ddca06f1df77ebade6";
+
+    async function uploadImages() {
+      const files = document.getElementById("imageInput").files;
+      if (!files.length) return alert("يرجى اختيار بعض الصور.");
+
+      document.getElementById("status").textContent = "📤 جاري رفع الصور...";
+
+      // 🔄 نحمل الصور إلى imgbb.com (خدمة مجانية)
+      const imageUrls = [];
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("image", file);
+        const res = await fetch("https://api.imgbb.com/1/upload?key=8e6cfe6bbfa6c7e155a11e0545e2e2fd", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        imageUrls.push(data.data.url);
+      }
+
+      document.getElementById("status").textContent = "🚀 جاري توليد الفيديو...";
+
+      // 🔗 إرسال روابط الصور إلى Runway API
+      const runwayRes = await fetch("https://api.runwayml.com/v1/gen2/image-to-video", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          image_urls: imageUrls,
+          fps: 12,
+          interpolation: true,
+          output_format: "mp4"
+        })
+      });
+
+      const videoData = await runwayRes.json();
+
+      if (videoData.video_url) {
+        document.getElementById("videoResult").innerHTML = `
+          <p class="mb-2">✅ تم إنشاء الفيديو:</p>
+          <video controls class="w-full rounded-md shadow">
+            <source src="${videoData.video_url}" type="video/mp4">
+          </video>
+        `;
+        document.getElementById("status").textContent = "";
+      } else {
+        document.getElementById("status").textContent = "❌ حدث خطأ أثناء توليد الفيديو.";
+      }
+    }
+
+    // 👁️‍🗨️ عرض صور المستخدم
+    document.getElementById("imageInput").addEventListener("change", function() {
+      const preview = document.getElementById("preview");
+      preview.innerHTML = "";
+      for (const file of this.files) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = "w-full rounded shadow";
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>
