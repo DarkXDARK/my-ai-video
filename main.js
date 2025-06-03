@@ -59,11 +59,14 @@
         });
 
         const postResult = await postRes.json();
+console.log("📦 رد Runway:", postResult); // ✅ يظهر الرد في الكونسول
 
-        if (!postResult.id) {
-          status.textContent = '❌ فشل في إرسال الصورة.';
-          return;
-        }
+if (!postResult.id) {
+  const msg = postResult?.error?.message || JSON.stringify(postResult) || "حدث خطأ غير معروف.";
+  status.textContent = `❌ فشل في إرسال الصورة: ${msg}`;
+  return;
+}
+
 
         const taskId = postResult.id;
         status.textContent = '⏳ جاري توليد الفيديو...';
