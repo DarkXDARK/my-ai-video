@@ -87,24 +87,29 @@
       let retries = 20;
       let outputUrl = null;
 
-      while (retries-- > 0) {
-        const checkRes = await fetch(`https://api.runwayml.com/v1/tasks/${taskId}`, {
-          headers: {
-            Authorization: `Bearer ${API_KEY}`
-          }
-        });
-        const checkData = await checkRes.json();
+      let attempt = 1;
+while (retries-- > 0) {
+  status.textContent = `⌛ المحاولة ${attempt} من 20: جاري التحقق من حالة الفيديو...`;
+  
+  const checkRes = await fetch(`https://api.runwayml.com/v1/tasks/${taskId}`, {
+    headers: {
+      Authorization: `Bearer ${API_KEY}`
+    }
+  });
+  const checkData = await checkRes.json();
 
-        if (checkData.status === "SUCCEEDED") {
-          outputUrl = checkData.output[0];
-          break;
-        } else if (checkData.status === "FAILED") {
-          status.textContent = "❌ فشل في إنشاء الفيديو.";
-          return;
-        }
+  if (checkData.status === "SUCCEEDED") {
+    outputUrl = checkData.output[0];
+    break;
+  } else if (checkData.status === "FAILED") {
+    status.textContent = "❌ فشل في إنشاء الفيديو.";
+    return;
+  }
 
-        await new Promise(r => setTimeout(r, 3000));
-      }
+  attempt++;
+  await new Promise(r => setTimeout(r, 3000)); // ⏱️ انتظار 3 ثواني
+}
+
 
       if (outputUrl) {
         status.textContent = "✅ تم إنشاء الفيديو:";
