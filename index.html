@@ -36,6 +36,17 @@
       const preview = document.getElementById("preview");
       videoDiv.innerHTML = "";
       preview.innerHTML = "";
+      const loader = document.getElementById("loader"); // 👈 جلب عنصر اللودر
+      loader.classList.remove("hidden"); // 👈 إظهار اللودر
+
+  try {
+    // ... كل الكود السابق كما هو (رفع الصورة، انتظار النتيجة...)
+  } catch (err) {
+    console.error("حدث خطأ:", err);
+  } finally {
+    loader.classList.add("hidden"); // 👈 إخفاء اللودر بعد الانتهاء سواء بنجاح أو خطأ
+  }
+}
 
       if (!file) return alert("يرجى اختيار صورة واحدة فقط.");
 
