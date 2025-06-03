@@ -58,7 +58,7 @@
 
       status.textContent = "🚀 جاري إرسال الصور لـ Runway...";
 
-      const runwayRes = await fetch("https://api.runwayml.com/v1/gen2/image-to-video", {
+      const runwayRes = await fetch("https://api.runwayml.com/v1/inference/gen2", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${API_KEY}`,
