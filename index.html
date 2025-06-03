@@ -48,22 +48,23 @@
     status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
 
     const runwayRes = await fetch("https://api.runwayml.com/v1/image_to_video", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        promptImage: [
-          {
-            uri: imageUrl,
-            position: "first"
-          }
-        ],
-        ratio: "1280:768",
-        fps: 12
-      })
-    });
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${API_KEY}`,
+    "Content-Type": "application/json",
+    "Runway-API-Version": "2024-11-06" // 👈 هذا هو المطلوب
+  },
+  body: JSON.stringify({
+    promptImage: [
+      {
+        uri: imageUrl,
+        position: "first"
+      }
+    ],
+    ratio: "1280:768",
+    fps: 12
+  })
+});
 
     const runwayData = await runwayRes.json();
     if (!runwayData.id) {
