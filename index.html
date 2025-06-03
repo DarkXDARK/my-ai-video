@@ -11,6 +11,8 @@
 
     <input type="file" id="imageInput" accept="image/*" class="w-full p-2 border rounded-md" />
 
+    <textarea id="promptInput" class="w-full p-2 border rounded-md mt-2" placeholder="مثال: لقطة بانورامية لمنظر طبيعي عند الغروب"></textarea>
+
     <div id="preview" class="grid grid-cols-1 gap-2 mt-2"></div>
 
     <button onclick="uploadImage()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
@@ -19,7 +21,6 @@
 
     <div id="status" class="text-center text-sm mt-2"></div>
 
-    <!-- Loader -->
     <div id="loader" class="hidden flex justify-center mt-4">
       <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
     </div>
@@ -33,6 +34,7 @@
 
     async function uploadImage() {
       const file = document.getElementById("imageInput").files[0];
+      const promptText = document.getElementById("promptInput").value;
       const status = document.getElementById("status");
       const videoDiv = document.getElementById("videoResult");
       const preview = document.getElementById("preview");
@@ -40,13 +42,14 @@
 
       videoDiv.innerHTML = "";
       preview.innerHTML = "";
+      loader.classList.remove("hidden");
 
-      if (!file) return alert("يرجى اختيار صورة واحدة فقط.");
-
-      loader.classList.remove("hidden"); // إظهار اللودر
+      if (!file) {
+        loader.classList.add("hidden");
+        return alert("يرجى اختيار صورة واحدة فقط.");
+      }
 
       try {
-        // عرض المعاينة
         const reader = new FileReader();
         reader.onload = e => {
           const img = document.createElement("img");
@@ -56,8 +59,8 @@
         };
         reader.readAsDataURL(file);
 
-        // رفع إلى imgbb
         status.textContent = "📤 جاري رفع الصورة إلى imgbb...";
+
         const formData = new FormData();
         formData.append("image", file);
 
@@ -75,15 +78,15 @@
         const imageUrl = uploadData.data.url;
         status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
 
-        // إرسال إلى Runway
-        const runwayRes = await fetch("https://api.runwayml.com/v1/inference/gen2", {
+        const runwayRes = await fetch("https://api.runwayml.com/v1/image_to_video", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
-            "Runway-API-Version": "2024-05-01"
+            "Runway-API-Version": "2024-11-06"
           },
           body: JSON.stringify({
+            prompt: promptText,
             promptImage: [
               {
                 uri: imageUrl,
@@ -105,7 +108,6 @@
         const taskId = runwayData.id;
         status.textContent = "⏳ جاري توليد الفيديو...";
 
-        // التحقق من المهمة
         let retries = 20;
         let outputUrl = null;
 
@@ -139,12 +141,11 @@
         } else {
           status.textContent = "⏱️ انتهى الوقت دون الحصول على نتيجة.";
         }
-
       } catch (err) {
-        console.error("❌ خطأ:", err);
-        status.textContent = "⚠️ حدث خطأ أثناء العملية.";
+        console.error("حدث خطأ:", err);
+        status.textContent = "❌ حدث خطأ أثناء المعالجة.";
       } finally {
-        loader.classList.add("hidden"); // إخفاء اللودر
+        loader.classList.add("hidden");
       }
     }
   </script>
