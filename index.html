@@ -63,13 +63,25 @@
       const imageUrl = uploadData.data.url;
       status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
 
-      const runwayRes = await fetch("https://api.runwayml.com/v1/image_to_video", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-          "Runway-API-Version": "2024-05-01"
-        },
+      cconst runwayRes = await fetch("https://api.runwayml.com/v1/inference/gen2", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${API_KEY}`,
+    "Content-Type": "application/json",
+    "Runway-API-Version": "2024-05-01"
+  },
+  body: JSON.stringify({
+    promptImage: [
+      {
+        uri: imageUrl,
+        position: "first"
+      }
+    ],
+    ratio: "1280:768",
+    fps: 12
+  })
+});
+
         body: JSON.stringify({
           promptImage: [
             {
