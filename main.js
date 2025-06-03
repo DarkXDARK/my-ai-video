@@ -50,7 +50,7 @@ async function uploadImage() {
     const imageUrl = uploadData.data.url;
     status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
 
-    const runwayRes = await fetch("https://api.runwayml.com/v1/image_to_video", {
+    const runwayRes = await fetch("https://api.runwayml.com//v1/image_to_video", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${API_KEY}`,
