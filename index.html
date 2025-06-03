@@ -19,36 +19,45 @@
     </button>
 
     <div id="status" class="text-center text-sm mt-2"></div>
-
     <div id="videoResult" class="mt-4 text-center"></div>
   </div>
 
   <script>
     const API_KEY = "key_6ed2397f66edbb1bba927b06e94139079c33d19e81b4e0bc755e913455b83a384815eb1ff4f66245902366e530a0f99db833a76119f216ddca06f1df77ebade6";
+    const imgbbApiKey = "c0e2b4b6f8cb952f80d651affe18eda3";
 
     async function uploadImages() {
       const files = document.getElementById("imageInput").files;
+      const status = document.getElementById("status");
+      const videoDiv = document.getElementById("videoResult");
+      videoDiv.innerHTML = "";
+
       if (!files.length) return alert("يرجى اختيار بعض الصور.");
 
-      document.getElementById("status").textContent = "📤 جاري رفع الصور...";
+      status.textContent = "📤 جاري رفع الصور...";
 
-      // 🔄 نحمل الصور إلى imgbb.com (خدمة مجانية)
       const imageUrls = [];
 
       for (const file of files) {
         const formData = new FormData();
         formData.append("image", file);
-        const res = await fetch("https://api.imgbb.com/1/upload?key=c0e2b4b6f8cb952f80d651affe18eda3", {
+
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
           method: "POST",
           body: formData
         });
+
         const data = await res.json();
-        imageUrls.push(data.data.url);
+        if (data && data.success) {
+          imageUrls.push(data.data.url);
+        } else {
+          status.textContent = "❌ فشل في رفع صورة إلى imgbb.";
+          return;
+        }
       }
 
-      document.getElementById("status").textContent = "🚀 جاري توليد الفيديو...";
+      status.textContent = "🚀 جاري إرسال الصور لـ Runway...";
 
-      // 🔗 إرسال روابط الصور إلى Runway API
       const runwayRes = await fetch("https://api.runwayml.com/v1/gen2/image-to-video", {
         method: "POST",
         headers: {
@@ -63,23 +72,51 @@
         })
       });
 
-      const videoData = await runwayRes.json();
+      const runwayData = await runwayRes.json();
 
-      if (videoData.video_url) {
-        document.getElementById("videoResult").innerHTML = `
-          <p class="mb-2">✅ تم إنشاء الفيديو:</p>
-          <video controls class="w-full rounded-md shadow">
-            <source src="${videoData.video_url}" type="video/mp4">
+      if (!runwayData.id) {
+        status.textContent = "❌ فشل إنشاء المهمة في Runway.";
+        return;
+      }
+
+      const taskId = runwayData.id;
+      status.textContent = "⏳ جاري توليد الفيديو...";
+
+      let retries = 20;
+      let outputUrl = null;
+
+      while (retries-- > 0) {
+        const checkRes = await fetch(`https://api.runwayml.com/v1/tasks/${taskId}`, {
+          headers: {
+            Authorization: `Bearer ${API_KEY}`
+          }
+        });
+        const checkData = await checkRes.json();
+
+        if (checkData.status === "SUCCEEDED") {
+          outputUrl = checkData.output[0];
+          break;
+        } else if (checkData.status === "FAILED") {
+          status.textContent = "❌ فشل في إنشاء الفيديو.";
+          return;
+        }
+
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      if (outputUrl) {
+        status.textContent = "✅ تم إنشاء الفيديو:";
+        videoDiv.innerHTML = `
+          <video controls class="w-full rounded-md shadow mt-2">
+            <source src="${outputUrl}" type="video/mp4">
           </video>
         `;
-        document.getElementById("status").textContent = "";
       } else {
-        document.getElementById("status").textContent = "❌ حدث خطأ أثناء توليد الفيديو.";
+        status.textContent = "⏱️ انتهى الوقت دون الحصول على نتيجة.";
       }
     }
 
-    // 👁️‍🗨️ عرض صور المستخدم
-    document.getElementById("imageInput").addEventListener("change", function() {
+    document.getElementById("imageInput").addEventListener("change", function () {
       const preview = document.getElementById("preview");
       preview.innerHTML = "";
       for (const file of this.files) {
