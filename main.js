@@ -29,8 +29,8 @@
   <video id="resultVideo" controls style="display:none;"></video>
 
   <script>
-    const API_KEY = 'YOUR_API_KEY';
-    const ENDPOINT = 'https://api.runwayml.com/v1/inference/YOUR_MODEL_ID'; // مثال: gen2-image-to-video
+    const API_KEY = 'key_6ed2397f66edbb1bba927b06e94139079c33d19e81b4e0bc755e913455b83a384815eb1ff4f66245902366e530a0f99db833a76119f216ddca06f1df77ebade6';
+    const ENDPOINT = 'https://api.runwayml.com/v1/inference/gen4_turbo'; // مثال: gen2-image-to-video
 
     async function generateVideo() {
       const input = document.getElementById('imageInput');
