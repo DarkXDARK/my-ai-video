@@ -18,9 +18,11 @@
     </button>
 
     <div id="status" class="text-center text-sm mt-2"></div>
+
+    <!-- Loader -->
     <div id="loader" class="hidden flex justify-center mt-4">
-  <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-</div>
+      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
 
     <div id="videoResult" class="mt-4 text-center"></div>
   </div>
@@ -34,111 +36,115 @@
       const status = document.getElementById("status");
       const videoDiv = document.getElementById("videoResult");
       const preview = document.getElementById("preview");
+      const loader = document.getElementById("loader");
+
       videoDiv.innerHTML = "";
       preview.innerHTML = "";
-      const loader = document.getElementById("loader"); // 👈 جلب عنصر اللودر
-      loader.classList.remove("hidden"); // 👈 إظهار اللودر
-
-  try {
-    // ... كل الكود السابق كما هو (رفع الصورة، انتظار النتيجة...)
-  } catch (err) {
-    console.error("حدث خطأ:", err);
-  } finally {
-    loader.classList.add("hidden"); // 👈 إخفاء اللودر بعد الانتهاء سواء بنجاح أو خطأ
-  }
-}
 
       if (!file) return alert("يرجى اختيار صورة واحدة فقط.");
 
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = document.createElement("img");
-        img.src = e.target.result;
-        img.className = "w-full rounded shadow";
-        preview.appendChild(img);
-      };
-      reader.readAsDataURL(file);
+      loader.classList.remove("hidden"); // إظهار اللودر
 
-      status.textContent = "📤 جاري رفع الصورة إلى imgbb...";
+      try {
+        // عرض المعاينة
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = "w-full rounded shadow";
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
 
-      const formData = new FormData();
-      formData.append("image", file);
+        // رفع إلى imgbb
+        status.textContent = "📤 جاري رفع الصورة إلى imgbb...";
+        const formData = new FormData();
+        formData.append("image", file);
 
-      const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-        method: "POST",
-        body: formData
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadData.success) {
-        status.textContent = "❌ فشل في رفع الصورة.";
-        return;
-      }
-
-      const imageUrl = uploadData.data.url;
-      status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
-
-      const runwayRes = await fetch("https://api.runwayml.com/v1/inference/gen2", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-          "Runway-API-Version": "2024-05-01"
-        },
-        body: JSON.stringify({
-          promptImage: [
-            {
-              uri: imageUrl,
-              position: "first"
-            }
-          ],
-          ratio: "1280:768",
-          fps: 12
-        })
-      });
-
-      const runwayData = await runwayRes.json();
-      if (!runwayData.id) {
-        console.error("📛 رد Runway:", runwayData);
-        status.textContent = `❌ فشل إنشاء المهمة: ${runwayData.error?.message || "حدث خطأ."}`;
-        return;
-      }
-
-      const taskId = runwayData.id;
-      status.textContent = "⏳ جاري توليد الفيديو...";
-
-      let retries = 20;
-      let outputUrl = null;
-
-      while (retries-- > 0) {
-        const checkRes = await fetch(`https://api.runwayml.com/v1/tasks/${taskId}`, {
-          headers: {
-            "Authorization": `Bearer ${API_KEY}`
-          }
+        const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+          method: "POST",
+          body: formData
         });
 
-        const checkData = await checkRes.json();
-
-        if (checkData.status === "SUCCEEDED") {
-          outputUrl = checkData.output?.videoUri || checkData.output?.[0];
-          break;
-        } else if (checkData.status === "FAILED") {
-          status.textContent = "❌ فشل في إنشاء الفيديو.";
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) {
+          status.textContent = "❌ فشل في رفع الصورة.";
           return;
         }
 
-        await new Promise(r => setTimeout(r, 3000));
-      }
+        const imageUrl = uploadData.data.url;
+        status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
 
-      if (outputUrl) {
-        status.textContent = "✅ تم إنشاء الفيديو:";
-        videoDiv.innerHTML = `
-          <video controls class="w-full rounded-md shadow mt-2">
-            <source src="${outputUrl}" type="video/mp4">
-          </video>
-        `;
-      } else {
-        status.textContent = "⏱️ انتهى الوقت دون الحصول على نتيجة.";
+        // إرسال إلى Runway
+        const runwayRes = await fetch("https://api.runwayml.com/v1/inference/gen2", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "Content-Type": "application/json",
+            "Runway-API-Version": "2024-05-01"
+          },
+          body: JSON.stringify({
+            promptImage: [
+              {
+                uri: imageUrl,
+                position: "first"
+              }
+            ],
+            ratio: "1280:768",
+            fps: 12
+          })
+        });
+
+        const runwayData = await runwayRes.json();
+        if (!runwayData.id) {
+          console.error("📛 رد Runway:", runwayData);
+          status.textContent = `❌ فشل إنشاء المهمة: ${runwayData.error?.message || "حدث خطأ."}`;
+          return;
+        }
+
+        const taskId = runwayData.id;
+        status.textContent = "⏳ جاري توليد الفيديو...";
+
+        // التحقق من المهمة
+        let retries = 20;
+        let outputUrl = null;
+
+        while (retries-- > 0) {
+          const checkRes = await fetch(`https://api.runwayml.com/v1/tasks/${taskId}`, {
+            headers: {
+              "Authorization": `Bearer ${API_KEY}`
+            }
+          });
+
+          const checkData = await checkRes.json();
+
+          if (checkData.status === "SUCCEEDED") {
+            outputUrl = checkData.output?.videoUri || checkData.output?.[0];
+            break;
+          } else if (checkData.status === "FAILED") {
+            status.textContent = "❌ فشل في إنشاء الفيديو.";
+            return;
+          }
+
+          await new Promise(r => setTimeout(r, 3000));
+        }
+
+        if (outputUrl) {
+          status.textContent = "✅ تم إنشاء الفيديو:";
+          videoDiv.innerHTML = `
+            <video controls class="w-full rounded-md shadow mt-2">
+              <source src="${outputUrl}" type="video/mp4">
+            </video>
+          `;
+        } else {
+          status.textContent = "⏱️ انتهى الوقت دون الحصول على نتيجة.";
+        }
+
+      } catch (err) {
+        console.error("❌ خطأ:", err);
+        status.textContent = "⚠️ حدث خطأ أثناء العملية.";
+      } finally {
+        loader.classList.add("hidden"); // إخفاء اللودر
       }
     }
   </script>
