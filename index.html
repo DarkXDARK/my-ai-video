@@ -65,7 +65,7 @@
       const imageUrl = uploadData.data.url;
       status.textContent = "🚀 جاري إرسال الصورة لـ Runway...";
 
-      const runwayRes = await fetch("https://api.runwayml.com/v1/inference/gen2", {
+      const runwayRes = await fetch("https://api.runwayml.com/v2/inference/gen-2", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${API_KEY}`,
