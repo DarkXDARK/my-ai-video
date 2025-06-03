@@ -35,7 +35,6 @@
 
       if (!file) return alert("يرجى اختيار صورة واحدة فقط.");
 
-      // عرض الصورة
       const reader = new FileReader();
       reader.onload = e => {
         const img = document.createElement("img");
